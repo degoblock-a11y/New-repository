@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pythonであそぼう！ - Day1：キャラを動かそう</title>
+
+<!-- CodeMirror（VSCode風エディタ） -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/codemirror.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/theme/dracula.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.9/mode/python/python.min.js"></script>
+
+<!-- Pyodide -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
+
+<style>
+  body {
+    margin: 0;
+    background-color: #1e1e1e;
+    color: #fff;
+    font-family: "Noto Sans JP", sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  header {
+    background: #333;
+    padding: 10px 20px;
+    font-size: 1.2em;
+    font-weight: bold;
+  }
+  main {
+    display: flex;
+    flex: 1;
+  }
+  #editor {
+    width: 50%;
+    height: 100%;
+  }
+  #game {
+    width: 50%;
+    background: #111;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #output {
+    background: #222;
+    padding: 10px;
+    font-size: 0.9em;
+    height: 120px;
+    overflow-y: auto;
+  }
+  button {
+    background: #4caf50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 1em;
+  }
+  button:hover {
+    background: #45a049;
+  }
+</style>
+</head>
+<body>
+<header>🐍 Pythonであそぼう！ Day1：キャラを動かそう</header>
+<main>
+  <div id="editor"></div>
+  <div id="game">
+    <canvas id="canvas" width="400" height="400" style="background:#000;border:1px solid #555;"></canvas>
+  </div>
+</main>
+<div style="display:flex;justify-content:space-between;align-items:center;">
+  <button id="run">▶ 実行する</button>
+  <div style="padding-right:20px;">💬 今日のポイント：矢印キーで動かそう！</div>
+</div>
+<div id="output"></div>
+
+<script>
+let pyodideReadyPromise = loadPyodide();
+
+async function runPython() {
+  const pyodide = await pyodideReadyPromise;
+  let code = editor.getValue();
+  document.getElementById("output").innerText = "実行中...\n";
+  try {
+    await pyodide.runPythonAsync(code);
+    document.getElementById("output").innerText += "完了しました！";
+  } catch (err) {
+    document.getElementById("output").innerText += err;
+  }
+}
+
+document.getElementById("run").addEventListener("click", runPython);
+
+// CodeMirror設定
+let editor = CodeMirror(document.getElementById("editor"), {
+  value: `import js
+from js import document
+
+canvas = document.getElementById("canvas")
+ctx = canvas.getContext("2d")
+
+x, y = 200, 200
+speed = 5
+keys = {"ArrowUp":False, "ArrowDown":False, "ArrowLeft":False, "ArrowRight":False}
+
+def draw():
+    ctx.fillStyle = "black"
+    ctx.fillRect(0, 0, 400, 400)
+    ctx.fillStyle = "lime"
+    ctx.fillRect(x, y, 30, 30)
+
+def update():
+    global x, y
+    if keys["ArrowUp"]: y -= speed
+    if keys["ArrowDown"]: y += speed
+    if keys["ArrowLeft"]: x -= speed
+    if keys["ArrowRight"]: x += speed
+    if x < 0: x = 0
+    if x > 370: x = 370
+    if y < 0: y = 0
+    if y > 370: y = 370
+
+def loop(*args):
+    update()
+    draw()
+    js.window.requestAnimationFrame(loop)
+
+def key_down(event):
+    if event.key in keys:
+        keys[event.key] = True
+
+def key_up(event):
+    if event.key in keys:
+        keys[event.key] = False
+
+document.addEventListener("keydown", key_down)
+document.addEventListener("keyup", key_up)
+loop()
+print("動いた！矢印キーで動かしてみよう🐍")`,
+  mode: "python",
+  theme: "dracula",
+  lineNumbers: true,
+});
+</script>
+</body>
+</html>
